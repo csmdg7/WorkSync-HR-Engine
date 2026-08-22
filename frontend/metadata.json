@@ -1,0 +1,6 @@
+{
+  "name": "DayFlow HR Command Center",
+  "description": "Enterprise HR Command Center for real-time workforce pulse, smart attendance tracking, automated payroll verification, and lifecycle management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

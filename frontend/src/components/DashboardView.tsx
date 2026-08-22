@@ -34,10 +34,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const missingCheckoutsCount = missingCheckouts.filter((c) => c.status === 'pending').length;
   const payrollReviewsCount = payrollReviews.filter((p) => p.status === 'pending').length;
 
-  const totalEmployeesCount = employees.length > 8 ? employees.length : 120;
-  const presentCount = 108;
-  const onLeaveCount = 12;
-  const isAllPayrollVerified = employees.slice(0, 4).every((e) => e.isPayrollVerified);
+  const totalEmployeesCount = employees.length;
+  const presentCount = employees.filter((e) => e.attendanceStatus === 'Present').length;
+  const onLeaveCount = employees.filter((e) => e.attendanceStatus === 'Leave' || e.status === 'On Leave').length;
+  const attendanceRate = totalEmployeesCount > 0 ? Math.round((presentCount / totalEmployeesCount) * 100) : 0;
+  const verifiedPayrollCount = employees.filter((e) => e.isPayrollVerified).length;
+  const isAllPayrollVerified = totalEmployeesCount > 0 && verifiedPayrollCount === totalEmployeesCount;
 
   return (
     <div className="max-w-[1440px] mx-auto w-full pb-12">
@@ -90,7 +92,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {presentCount}
           </div>
           <div className="text-[14px] text-[#45464D] mt-2 flex items-center gap-1 relative z-10">
-            <span className="text-emerald-600 font-semibold flex items-center">90%</span> attendance rate
+            <span className="text-emerald-600 font-semibold flex items-center">{attendanceRate}%</span> attendance rate
           </div>
         </div>
 
@@ -127,7 +129,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
           <div className="text-[28px] font-bold text-[#1B1B1D] mt-2 leading-tight relative z-10">
-            {isAllPayrollVerified ? 'Verified' : `${payrollReviewsCount} Reviews`}
+            {isAllPayrollVerified ? 'Verified' : `${totalEmployeesCount - verifiedPayrollCount} Pending`}
           </div>
           <div className="text-[14px] text-[#45464D] mt-2 flex items-center gap-1 relative z-10">
             Next run in 4 days

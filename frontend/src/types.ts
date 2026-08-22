@@ -12,12 +12,11 @@ export interface Employee {
   deductions: number;
   netSalary: number;
   isPayrollVerified: boolean;
-  status: 'Active' | 'On Leave' | 'Probation' | 'Terminated';
-  attendanceStatus: 'Present' | 'Absent' | 'Half-day' | 'Leave';
+  status: 'Active' | 'On Leave' | 'Terminated';
+  attendanceStatus: 'Present' | 'Leave' | 'Half-day' | 'Absent';
   joinDate: string;
   phone: string;
   location: string;
-  avatarUrl?: string;
 }
 
 export interface PendingLeave {
@@ -26,7 +25,7 @@ export interface PendingLeave {
   employeeName: string;
   initials: string;
   department: string;
-  leaveType: 'Annual Leave' | 'Sick Leave' | 'Casual Leave' | 'Maternity Leave';
+  leaveType: string;
   startDate: string;
   endDate: string;
   days: number;
@@ -43,7 +42,6 @@ export interface MissingCheckout {
   department: string;
   date: string;
   checkInTime: string;
-  expectedCheckOutTime: string;
   shift: string;
   status: 'pending' | 'resolved';
 }
@@ -65,7 +63,7 @@ export interface PayrollReview {
 
 export interface LifecycleMilestone {
   id: string;
-  type: 'joined' | 'profile_completed' | 'first_checkin' | 'leave_approved' | 'promotion';
+  type: 'joined' | 'promotion' | 'profile_completed' | 'checkin' | 'leave_approved' | 'review';
   title: string;
   subtitle: string;
   timeLabel: string;
@@ -79,10 +77,19 @@ export interface LifecycleMilestone {
 
 export interface CalendarDay {
   dayNumber: number;
+  dateString: string;
   isCurrentMonth: boolean;
-  status: 'present' | 'absent' | 'half-day' | 'leave' | 'neutral';
-  hasDot?: boolean;
+  status?: 'present' | 'absent' | 'half-day' | 'leave' | 'weekend';
   presentCount?: number;
   absentCount?: number;
   leaveCount?: number;
+}
+
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  avatarUrl?: string;
 }

@@ -1,9 +1,5 @@
 import React, { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { NavTab, Employee, CalendarDay, LifecycleMilestone, PendingLeave, MissingCheckout, PayrollReview } from './types';
-=======
-import { NavTab, Employee, CalendarDay, LifecycleMilestone, AuthUser } from './types';
->>>>>>> 3621019 (feat: add backend integration, api client, and login view)
+import { NavTab, Employee, CalendarDay, LifecycleMilestone, PendingLeave, MissingCheckout, PayrollReview, AuthUser } from './types';
 import {
   initialPendingLeaves,
   initialMissingCheckouts,
@@ -18,7 +14,7 @@ import { PayrollView } from './components/PayrollView';
 import { AttendanceView } from './components/AttendanceView';
 import { LifecycleView } from './components/LifecycleView';
 import { SettingsView } from './components/SettingsView';
-import { LoginView } from './components/LoginView';
+import { LoginView } from './components/loginView';
 import { AddEmployeeModal } from './components/AddEmployeeModal';
 import { ActionCenterModal } from './components/ActionCenterModal';
 import { EmployeeDetailModal } from './components/EmployeeDetailModal';
@@ -50,15 +46,7 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-<<<<<<< HEAD
-  // Core Data States (Initialized with fallback data, dynamically syncable with backend)
-  const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
-  const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>(initialPendingLeaves);
-  const [missingCheckouts, setMissingCheckouts] = useState<MissingCheckout[]>(initialMissingCheckouts);
-  const [payrollReviews, setPayrollReviews] = useState<PayrollReview[]>(initialPayrollReviews);
-  const [lifecycleMilestones, setLifecycleMilestones] = useState<LifecycleMilestone[]>(initialLifecycleMilestones);
-=======
-  // Core Data States - initialized from LocalStorage
+  // Core Data States - initialized from LocalStorage and optional backend
   const [employees, setEmployees] = useState<Employee[]>(() => {
     try {
       const saved = localStorage.getItem('dayflow_employees_db');
@@ -70,7 +58,7 @@ export default function App() {
     return [];
   });
 
-  const [pendingLeaves, setPendingLeaves] = useState(() => {
+  const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>(() => {
     try {
       const saved = localStorage.getItem('dayflow_leaves_db');
       if (saved) return JSON.parse(saved);
@@ -78,7 +66,7 @@ export default function App() {
     return initialPendingLeaves;
   });
 
-  const [missingCheckouts, setMissingCheckouts] = useState(() => {
+  const [missingCheckouts, setMissingCheckouts] = useState<MissingCheckout[]>(() => {
     try {
       const saved = localStorage.getItem('dayflow_checkouts_db');
       if (saved) return JSON.parse(saved);
@@ -86,7 +74,7 @@ export default function App() {
     return initialMissingCheckouts;
   });
 
-  const [payrollReviews, setPayrollReviews] = useState(() => {
+  const [payrollReviews, setPayrollReviews] = useState<PayrollReview[]>(() => {
     try {
       const saved = localStorage.getItem('dayflow_payroll_db');
       if (saved) return JSON.parse(saved);
@@ -101,7 +89,6 @@ export default function App() {
     } catch {}
     return initialLifecycleMilestones;
   });
->>>>>>> 3621019 (feat: add backend integration, api client, and login view)
 
   // Modals State
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
@@ -117,29 +104,6 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 3500);
   };
 
-<<<<<<< HEAD
-  // Optional: Dynamic sync from backend if running on localhost:5000
-  useEffect(() => {
-    const fetchBackendData = async () => {
-      try {
-        const res = await fetch('http://localhost:5000/api/employees');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
-            setEmployees(data.data);
-          }
-        }
-      } catch (e) {
-        // Backend not running on :5000; safely fallback to standard local state
-        console.info('Running with integrated local state storage.');
-      }
-    };
-    fetchBackendData();
-  }, []);
-
-  // Add Employee Handler
-  const handleAddEmployee = (newEmp: Employee) => {
-=======
   // Sync state changes directly to LocalStorage
   useEffect(() => {
     if (employees.length > 0) {
@@ -163,7 +127,7 @@ export default function App() {
     localStorage.setItem('dayflow_milestones_db', JSON.stringify(lifecycleMilestones));
   }, [lifecycleMilestones]);
 
-  // Exact 1:1 Fetch from SQLite Backend database
+  // Exact 1:1 Fetch from backend database if available
   useEffect(() => {
     const fetchFromDatabase = async () => {
       try {
@@ -172,18 +136,21 @@ export default function App() {
           const result = await res.json();
           const dbEmployees = result.data || result;
           if (Array.isArray(dbEmployees) && dbEmployees.length > 0) {
-            // Overwrite cleanly with exact database rows (no duplicated local merge)
             const normalized: Employee[] = dbEmployees.map((e: any) => ({
               id: e.id,
               name: e.name,
-              initials: e.initials || e.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase(),
+              initials:
+                e.initials ||
+                (e.name ? e.name.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase() : 'NA'),
               email: e.email,
               role: e.role,
               department: e.department || 'Engineering',
               baseSalary: Number(e.base_salary || e.baseSalary || 5000),
               allowances: Number(e.allowances || 300),
               deductions: Number(e.deductions || 100),
-              netSalary: Number(e.net_salary || e.netSalary || ((e.baseSalary || 5000) + (e.allowances || 300) - (e.deductions || 100))),
+              netSalary:
+                Number(e.net_salary || e.netSalary) ||
+                (Number(e.baseSalary || 5000) + Number(e.allowances || 300) - Number(e.deductions || 100)),
               isPayrollVerified: Boolean(e.is_payroll_verified ?? e.isPayrollVerified ?? true),
               status: e.status || 'Active',
               attendanceStatus: e.attendance_status || e.attendanceStatus || (e.status === 'On Leave' ? 'Leave' : 'Present'),
@@ -204,7 +171,6 @@ export default function App() {
 
   // Add Employee Handler (Instantly updates UI & persists to backend database)
   const handleAddEmployee = async (newEmp: Employee) => {
->>>>>>> 3621019 (feat: add backend integration, api client, and login view)
     setEmployees((prev) => [newEmp, ...prev]);
 
     const milestone: LifecycleMilestone = {
@@ -230,15 +196,6 @@ export default function App() {
     } catch {}
 
     showToast(`New employee ${newEmp.name} onboarded successfully.`);
-
-    // Try posting to backend if online
-    try {
-      fetch('http://localhost:5000/api/employees', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEmp)
-      }).catch(() => {});
-    } catch (_) {}
   };
 
   const handleOpenActionCenter = (tab: 'leaves' | 'checkouts' | 'payroll') => {
@@ -250,25 +207,9 @@ export default function App() {
     const item = pendingLeaves.find((l) => l.id === id);
     setPendingLeaves((prev) => prev.map((l) => (l.id === id ? { ...l, status: 'approved' } : l)));
     if (item) {
-<<<<<<< HEAD
-      const milestone: LifecycleMilestone = {
-        id: `LM-${Date.now()}`,
-        type: 'leave_approved',
-        title: 'Leave Approved',
-        subtitle: `${item.leaveType} (${item.days}d) approved`,
-        timeLabel: 'JUST NOW',
-        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        employeeName: item.employeeName,
-        icon: 'flight_takeoff',
-        iconBg: 'bg-slate-100',
-        iconColor: 'text-slate-600'
-      };
-      setLifecycleMilestones((prev) => [milestone, ...prev]);
-=======
       setEmployees((prev) =>
         prev.map((e) => (e.id === item.employeeId ? { ...e, status: 'On Leave', attendanceStatus: 'Leave' } : e))
       );
->>>>>>> 3621019 (feat: add backend integration, api client, and login view)
       showToast(`Approved leave request for ${item.employeeName}.`);
 
       // Try backend patch
@@ -280,20 +221,8 @@ export default function App() {
 
   const handleRejectLeave = (id: string) => {
     const item = pendingLeaves.find((l) => l.id === id);
-<<<<<<< HEAD
-    setPendingLeaves((prev) =>
-      prev.map((l) => (l.id === id ? { ...l, status: 'rejected' } : l))
-    );
-    if (item) {
-      showToast(`Rejected leave request for ${item.employeeName}.`);
-      try {
-        fetch(`http://localhost:5000/api/leaves/${id}/reject`, { method: 'PATCH' }).catch(() => {});
-      } catch (_) {}
-    }
-=======
     setPendingLeaves((prev) => prev.map((l) => (l.id === id ? { ...l, status: 'rejected' } : l)));
     if (item) showToast(`Rejected leave request for ${item.employeeName}.`);
->>>>>>> 3621019 (feat: add backend integration, api client, and login view)
   };
 
   const handleResolveCheckout = (id: string, time: string) => {
@@ -306,22 +235,8 @@ export default function App() {
     const item = payrollReviews.find((p) => p.id === id);
     setPayrollReviews((prev) => prev.map((p) => (p.id === id ? { ...p, status: 'verified' } : p)));
     if (item) {
-<<<<<<< HEAD
-      setEmployees((prev) =>
-        prev.map((e) => (e.id === item.employeeId ? { ...e, isPayrollVerified: true } : e))
-      );
-      showToast(`Payroll discrepancy verified and cleared for ${item.employeeName}.`);
-      try {
-        fetch(`http://localhost:5000/api/payroll/${item.employeeId}/verify`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ isVerified: true })
-        }).catch(() => {});
-      } catch (_) {}
-=======
       setEmployees((prev) => prev.map((e) => (e.id === item.employeeId ? { ...e, isPayrollVerified: true } : e)));
       showToast(`Payroll discrepancy verified for ${item.employeeName}.`);
->>>>>>> 3621019 (feat: add backend integration, api client, and login view)
     }
   };
 
@@ -525,8 +440,4 @@ export default function App() {
       />
     </div>
   );
-<<<<<<< HEAD
-    }
-=======
 }
->>>>>>> 3621019 (feat: add backend integration, api client, and login view)

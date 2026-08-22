@@ -6,24 +6,32 @@ interface AttendanceViewProps {
   pendingLeaves: PendingLeave[];
   missingCheckouts: MissingCheckout[];
   onOpenActionCenter: (tab: 'leaves' | 'checkouts') => void;
+  onToggleAttendance?: (empId: string, newStatus?: 'Present' | 'Leave' | 'Half-day' | 'Absent') => void;
 }
 
 export const AttendanceView: React.FC<AttendanceViewProps> = ({
   employees,
   pendingLeaves,
   missingCheckouts,
-  onOpenActionCenter
+  onOpenActionCenter,
+  onToggleAttendance
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'roster' | 'shifts' | 'kiosk'>('roster');
   const [kioskStatus, setKioskStatus] = useState<string | null>(null);
 
+  const totalEmployees = employees.length;
   const presentCount = employees.filter((e) => e.attendanceStatus === 'Present').length;
   const leaveCount = employees.filter((e) => e.attendanceStatus === 'Leave').length;
   const halfDayCount = employees.filter((e) => e.attendanceStatus === 'Half-day').length;
+  const dailyTurnoutRate = totalEmployees > 0 ? Math.round((presentCount / totalEmployees) * 100) : 0;
 
-  const handleSimulateSwipe = (empName: string) => {
+  const handleSimulateSwipe = (emp: Employee) => {
     const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setKioskStatus(`Badge scan verified for ${empName} at ${time}. Status: Recorded.`);
+    const nextStatus = emp.attendanceStatus === 'Present' ? 'Half-day' : 'Present';
+    if (onToggleAttendance) {
+      onToggleAttendance(emp.id, nextStatus);
+    }
+    setKioskStatus(`Badge scan verified for ${emp.name} at ${time}. Status updated to: ${nextStatus}.`);
     setTimeout(() => setKioskStatus(null), 4000);
   };
 
@@ -71,7 +79,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
           <div>
             <span className="text-xs font-semibold text-[#76777D] block mb-1">Present on Campus</span>
             <div className="text-3xl font-bold font-mono-numbers text-emerald-700">{presentCount}</div>
-            <div className="text-[11px] text-emerald-600 font-medium mt-1">90% Daily turn-out</div>
+            <div className="text-[11px] text-emerald-600 font-medium mt-1">{dailyTurnoutRate}% Daily turn-out</div>
           </div>
           <div className="p-3 bg-emerald-100 rounded-xl text-emerald-700">
             <span className="material-symbols-outlined text-[24px]">how_to_reg</span>
@@ -172,8 +180,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     </td>
                     <td className="py-3.5 px-5 text-right">
                       <button
-                        onClick={() => handleSimulateSwipe(emp.name)}
-                        className="px-2.5 py-1 bg-slate-100 text-black hover:bg-slate-200 rounded text-xs font-semibold transition-colors"
+                        onClick={() => handleSimulateSwipe(emp)}
+                        className="px-2.5 py-1 bg-slate-100 text-black hover:bg-slate-200 rounded text-xs font-semibold transition-colors cursor-pointer"
                       >
                         Log Scan
                       </button>
@@ -201,7 +209,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
               {employees.slice(0, 5).map((emp) => (
                 <button
                   key={emp.id}
-                  onClick={() => handleSimulateSwipe(emp.name)}
+                  onClick={() => handleSimulateSwipe(emp)}
                   className="w-full p-3 border border-[#E4E2E4] hover:border-[#0058BE] hover:bg-blue-50/50 rounded-xl flex items-center justify-between text-xs font-semibold text-[#1B1B1D] transition-all cursor-pointer"
                 >
                   <div className="flex items-center gap-2">

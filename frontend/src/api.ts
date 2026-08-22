@@ -67,4 +67,8 @@ export const api = {
     const res = await apiClient.post<{ success: boolean; data: LifecycleMilestone }>('/lifecycle/milestones', milestone);
     return res.data.data;
   }
+<<<<<<< HEAD
 };
+=======
+};
+>>>>>>> 3621019 (feat: add backend integration, api client, and login view)

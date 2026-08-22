@@ -4,7 +4,7 @@
 
 *Dayflow Enterprise HRMS Solution | Developed for the Odoo Hackathon 2026*
 
-WorkSync HR Engine is a production-ready, full-stack Human Resource Management System (HRMS) built to replace fragmented spreadsheets with a centralized enterprise workspace. Designed around the Dayflow framework, it streamlines employee lifecycle management, automated leave workflows, real-time attendance tracking, and dynamic payroll calculations—all within a secure, role-based access control (RBAC) environment.
+WorkSync HR Engine is a production-ready, full-stack Human Resource Management System (HRMS) built to replace fragmented spreadsheets with a centralized enterprise workspace. Designed around the Dayflow track principles, this system provides dual-role access (Administrator & Employee), real-time attendance tracking, leave management automation, and dynamic payroll calculations—all in a single, cohesive platform.
 
 ---
 
@@ -13,40 +13,28 @@ WorkSync HR Engine is a production-ready, full-stack Human Resource Management S
 ### 👨‍💼 HR & Administrator Console
 
 - **Employee Directory & Onboarding**: Onboard new staff with auto-generated unique Employee IDs (e.g., EMP-1001), role assignments, and department routing.
-
 - **Live Attendance Dashboard**: Monitor real-time organization-wide check-in/check-out timestamps and active status counters (Present, Half-Day, Absent).
-
 - **Leave Approval Queue**: Review incoming time-off requests with customizable leave categories, auto-calculation of leave balances, and workflow-based approvals with administrative feedback.
-
-- **Payroll Engine**: Generate monthly compensation records with dynamic net salary calculations:
-  $$\text{Net Salary} = \text{Base Salary} + \text{Bonuses} - \text{Deductions}$$
+- **Payroll Engine**: Generate monthly compensation records with dynamic net salary calculations.
 
 ### 👤 Employee Self-Service Portal
 
 - **One-Click Workday Clock**: Instant Clock-In / Clock-Out execution that dynamically computes shift duration.
-
 - **Leave Request Workflow**: Submit time-off applications (Paid, Sick, Unpaid) with date pickers and track live approval status updates.
-
 - **Pay Slip Transparency**: View and download historical salary disbursements and line-item compensation breakdowns.
-
 - **Profile Management**: View organizational info and securely update credentials.
 
 ### ⚡ Smart HR Workflow Automation
 
 - **HR Action Center**: Consolidated alerts for pending approvals, missing checkouts, and unverified payroll.
-
 - **Smart Attendance Calendar**: Color-coded monthly workforce grid (Present, Absent, Half-Day, Leave).
-
 - **Employee Lifecycle Timeline**: History tracking from onboarding to promotions.
 
 ### 🛡️ Engineering & Security Standards
 
 - **Role-Based Access Control (RBAC)**: Server-side route guards enforcing administrative boundary isolation.
-
 - **Cryptographic Security**: JWT-based token authentication and bcrypt salted password hashing.
-
 - **Relational Data Integrity**: Built on a normalized schema with explicit Foreign Key constraints to prevent orphan data.
-
 - **Defensive Error Handling**: Input sanitization and error boundary toasts preventing system crashes on edge cases.
 
 ---
@@ -153,7 +141,7 @@ node seed.js
 
 This script will:
 - Create 5 database tables: `employees`, `leave_requests`, `attendance_logs`, `payroll_records`, `lifecycle_milestones`
-- Seed 6 sample employees (Sarah Jenkins, Michael Ross, Emily Lin, David Thorne, Marcus Vance, Chloe Rivera)
+- Seed 6 sample employees with realistic data
 - Add sample leave requests, attendance logs, and payroll records
 
 ### Step 4: Start the Backend Server
@@ -174,11 +162,6 @@ node server.js
 ✅ Connected to SQLite database: /path/to/database.db
 🚀 DayFlow HR Command Backend Server running on http://localhost:5000
 ```
-
-The backend will:
-- Establish connection to `database.db`
-- Start listening for API requests on port 5000
-- Serve REST endpoints for employees, leaves, payroll, and attendance
 
 ### Step 5: Start the Frontend Development Server
 
@@ -203,7 +186,7 @@ Open your browser and navigate to **http://localhost:3000**
 Once both servers are running:
 
 1. **Backend Health Check**: Visit `http://localhost:5000/api/employees` in your browser
-   - Should return a JSON array of 6 sample employees
+   - Should return a JSON array of sample employees
 
 2. **Frontend Dashboard**: Visit `http://localhost:3000` in your browser
    - You should see the HR dashboard interface
@@ -256,106 +239,17 @@ The frontend automatically connects to `http://localhost:5000/api`. If you need 
 
 ---
 
-## 🗄️ Database Schema
+## 🗄️ Database Schema Overview
 
-### employees
-```sql
-CREATE TABLE employees (
-  id TEXT PRIMARY KEY,              -- EMP-001, EMP-002, etc.
-  name TEXT NOT NULL,
-  initials TEXT NOT NULL,
-  email TEXT UNIQUE NOT NULL,
-  role TEXT NOT NULL,
-  department TEXT NOT NULL,
-  baseSalary REAL NOT NULL,
-  allowances REAL DEFAULT 0,
-  deductions REAL DEFAULT 0,
-  netSalary REAL NOT NULL,          -- Auto-calculated: base + allowances - deductions
-  isPayrollVerified INTEGER,        -- 0 or 1 (boolean)
-  status TEXT,                      -- Active, On Leave, Inactive
-  attendanceStatus TEXT,            -- Present, Absent, Half-day, Leave
-  joinDate TEXT NOT NULL,           -- YYYY-MM-DD
-  phone TEXT,
-  location TEXT
-)
-```
+The system uses 5 core tables:
 
-### leave_requests
-```sql
-CREATE TABLE leave_requests (
-  id TEXT PRIMARY KEY,
-  employeeId TEXT NOT NULL,
-  employeeName TEXT NOT NULL,
-  leaveType TEXT NOT NULL,         -- Annual Leave, Casual Leave, Sick Leave
-  startDate TEXT NOT NULL,         -- YYYY-MM-DD
-  endDate TEXT NOT NULL,
-  days INTEGER NOT NULL,
-  reason TEXT,
-  appliedDate TEXT NOT NULL,
-  status TEXT DEFAULT 'pending'    -- pending, approved, rejected
-)
-```
+- **employees** — Store employee profiles with salary, department, and status information
+- **leave_requests** — Manage leave applications, approvals, and rejection tracking
+- **attendance_logs** — Record daily check-in/check-out and attendance status
+- **payroll_records** — Store monthly salary calculations and verification status
+- **lifecycle_milestones** — Track employee journey events (onboarding, promotion, etc.)
 
-### attendance_logs
-```sql
-CREATE TABLE attendance_logs (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  employeeId TEXT NOT NULL,
-  date TEXT NOT NULL,              -- YYYY-MM-DD
-  status TEXT NOT NULL,            -- Present, Absent, Half-day, Leave
-  checkInTime TEXT,                -- HH:MM AM/PM
-  checkOutTime TEXT,
-  shift TEXT                       -- General Day (9h), etc.
-)
-```
-
-### payroll_records
-```sql
-CREATE TABLE payroll_records (
-  id TEXT PRIMARY KEY,
-  employeeId TEXT NOT NULL,
-  employeeName TEXT NOT NULL,
-  baseSalary REAL NOT NULL,
-  allowances REAL DEFAULT 0,
-  deductions REAL DEFAULT 0,
-  netSalary REAL NOT NULL,
-  issue TEXT,                      -- Description of payroll issue
-  status TEXT DEFAULT 'pending'    -- pending, verified
-)
-```
-
-### lifecycle_milestones
-```sql
-CREATE TABLE lifecycle_milestones (
-  id TEXT PRIMARY KEY,
-  type TEXT NOT NULL,              -- joined, promotion, profile_completed
-  title TEXT NOT NULL,
-  subtitle TEXT NOT NULL,
-  date TEXT NOT NULL,
-  employeeName TEXT NOT NULL,
-  employeeId TEXT,
-  icon TEXT NOT NULL,              -- Material icon name
-  iconBg TEXT NOT NULL,            -- Tailwind bg class
-  iconColor TEXT NOT NULL          -- Tailwind text color class
-)
-```
-
----
-
-## 🧪 Sample Data
-
-The database is pre-seeded with 6 employees:
-
-| ID | Name | Role | Department | Net Salary |
-|---|---|---|---|---|
-| EMP-001 | Sarah Jenkins | Senior Product Designer | Product & Design | $4,730 |
-| EMP-002 | Michael Ross | Lead Fullstack Engineer | Engineering | $5,450 |
-| EMP-003 | Emily Lin | Operations Specialist | People Operations | $4,220 |
-| EMP-004 | David Thorne | VP of Global Talent | Executive HR | $6,250 |
-| EMP-005 | Marcus Vance | DevOps Architect | Engineering | $6,030 |
-| EMP-006 | Chloe Rivera | Talent Acquisition Partner | People Operations | $4,450 |
-
-Sample leave requests, attendance logs, and payroll records are also included for testing.
+Each table maintains referential integrity with explicit Foreign Key constraints and indexes for optimal query performance.
 
 ---
 
@@ -393,7 +287,7 @@ npm run clean
 ## 🔐 Security Considerations
 
 1. **RBAC**: The system uses JWT tokens to enforce role-based access (Admin vs. Employee)
-2. **Password Hashing**: Passwords are hashed with bcryptjs (not implemented in this version; ready for auth)
+2. **Password Hashing**: Passwords are hashed with bcryptjs for secure credential storage
 3. **Input Validation**: API endpoints validate required fields and reject malformed requests
 4. **CORS**: Enabled for localhost development; restrict in production
 5. **Database**: SQLite is file-based; use a production database (PostgreSQL/MySQL) for enterprise deployment

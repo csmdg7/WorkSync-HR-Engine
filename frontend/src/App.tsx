@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavTab, Employee, CalendarDay, LifecycleMilestone } from './types';
+import React, { useState, useEffect } from 'react';
+import { NavTab, Employee, CalendarDay, LifecycleMilestone, PendingLeave, MissingCheckout, PayrollReview } from './types';
 import {
   initialEmployees,
   initialPendingLeaves,
@@ -27,14 +27,14 @@ export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Core Data States
+  // Core Data States (Initialized with fallback data, dynamically syncable with backend)
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
-  const [pendingLeaves, setPendingLeaves] = useState(initialPendingLeaves);
-  const [missingCheckouts, setMissingCheckouts] = useState(initialMissingCheckouts);
-  const [payrollReviews, setPayrollReviews] = useState(initialPayrollReviews);
+  const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>(initialPendingLeaves);
+  const [missingCheckouts, setMissingCheckouts] = useState<MissingCheckout[]>(initialMissingCheckouts);
+  const [payrollReviews, setPayrollReviews] = useState<PayrollReview[]>(initialPayrollReviews);
   const [lifecycleMilestones, setLifecycleMilestones] = useState<LifecycleMilestone[]>(initialLifecycleMilestones);
 
-  // Modals
+  // Modals State
   const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
   const [isActionCenterOpen, setIsActionCenterOpen] = useState(false);
   const [actionCenterTab, setActionCenterTab] = useState<'leaves' | 'checkouts' | 'payroll'>('leaves');
@@ -49,6 +49,25 @@ export default function App() {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  // Optional: Dynamic sync from backend if running on localhost:5000
+  useEffect(() => {
+    const fetchBackendData = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/employees');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+            setEmployees(data.data);
+          }
+        }
+      } catch (e) {
+        // Backend not running on :5000; safely fallback to standard local state
+        console.info('Running with integrated local state storage.');
+      }
+    };
+    fetchBackendData();
+  }, []);
 
   // Add Employee Handler
   const handleAddEmployee = (newEmp: Employee) => {
@@ -67,6 +86,15 @@ export default function App() {
     };
     setLifecycleMilestones((prev) => [milestone, ...prev]);
     showToast(`New employee ${newEmp.name} onboarded successfully.`);
+
+    // Try posting to backend if online
+    try {
+      fetch('http://localhost:5000/api/employees', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newEmp)
+      }).catch(() => {});
+    } catch (_) {}
   };
 
   // Action Center Handlers
@@ -81,7 +109,6 @@ export default function App() {
       prev.map((l) => (l.id === id ? { ...l, status: 'approved' } : l))
     );
     if (item) {
-      // Add milestone
       const milestone: LifecycleMilestone = {
         id: `LM-${Date.now()}`,
         type: 'leave_approved',
@@ -96,6 +123,11 @@ export default function App() {
       };
       setLifecycleMilestones((prev) => [milestone, ...prev]);
       showToast(`Approved leave request for ${item.employeeName}.`);
+
+      // Try backend patch
+      try {
+        fetch(`http://localhost:5000/api/leaves/${id}/approve`, { method: 'PATCH' }).catch(() => {});
+      } catch (_) {}
     }
   };
 
@@ -106,6 +138,9 @@ export default function App() {
     );
     if (item) {
       showToast(`Rejected leave request for ${item.employeeName}.`);
+      try {
+        fetch(`http://localhost:5000/api/leaves/${id}/reject`, { method: 'PATCH' }).catch(() => {});
+      } catch (_) {}
     }
   };
 
@@ -129,6 +164,13 @@ export default function App() {
         prev.map((e) => (e.id === item.employeeId ? { ...e, isPayrollVerified: true } : e))
       );
       showToast(`Payroll discrepancy verified and cleared for ${item.employeeName}.`);
+      try {
+        fetch(`http://localhost:5000/api/payroll/${item.employeeId}/verify`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isVerified: true })
+        }).catch(() => {});
+      } catch (_) {}
     }
   };
 
@@ -138,6 +180,13 @@ export default function App() {
         if (e.id === id) {
           const nextState = !e.isPayrollVerified;
           showToast(nextState ? `Payroll verified for ${e.name}.` : `Verification reset for ${e.name}.`);
+          try {
+            fetch(`http://localhost:5000/api/payroll/${id}/verify`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ isVerified: nextState })
+            }).catch(() => {});
+          } catch (_) {}
           return { ...e, isPayrollVerified: nextState };
         }
         return e;
@@ -148,6 +197,13 @@ export default function App() {
   const handleAddMilestone = (newMilestone: LifecycleMilestone) => {
     setLifecycleMilestones((prev) => [newMilestone, ...prev]);
     showToast(`Milestone '${newMilestone.title}' logged for ${newMilestone.employeeName}.`);
+    try {
+      fetch('http://localhost:5000/api/lifecycle/milestones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newMilestone)
+      }).catch(() => {});
+    } catch (_) {}
   };
 
   return (
@@ -279,4 +335,4 @@ export default function App() {
       />
     </div>
   );
-}
+    }
